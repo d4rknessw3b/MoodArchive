@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1014021926738",
+    "project_id": "moodarch-d1da8",
+    "storage_bucket": "moodarch-d1da8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1014021926738:android:0d2f638a274f2455ba548b",
+        "android_client_info": {
+          "package_name": "com.moodarchive"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDl0drBV6S-i2qXdNQYgI3zUwbRPU2Ysw8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
