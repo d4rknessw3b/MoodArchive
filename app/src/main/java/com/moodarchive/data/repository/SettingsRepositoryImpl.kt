@@ -24,6 +24,8 @@ class SettingsRepositoryImpl @Inject constructor(
         private val KEY_AUTO_SYNC = booleanPreferencesKey("auto_sync")
         private val KEY_PIN_CODE = stringPreferencesKey("pin_code")
         private val KEY_BIOMETRIC = booleanPreferencesKey("biometric_enabled")
+        private val KEY_REMINDER_ENABLED = booleanPreferencesKey("reminder_enabled")
+        private val KEY_REMINDER_TIME = stringPreferencesKey("reminder_time")
     }
 
     override val isDarkTheme: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -56,5 +58,21 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setBiometricEnabled(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[KEY_BIOMETRIC] = enabled }
+    }
+
+    override val isReminderEnabled: Flow<Boolean> = dataStore.data.map { prefs ->
+        prefs[KEY_REMINDER_ENABLED] ?: false
+    }
+
+    override suspend fun setReminderEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_REMINDER_ENABLED] = enabled }
+    }
+
+    override val reminderTime: Flow<String> = dataStore.data.map { prefs ->
+        prefs[KEY_REMINDER_TIME] ?: "21:00"
+    }
+
+    override suspend fun setReminderTime(time: String) {
+        dataStore.edit { prefs -> prefs[KEY_REMINDER_TIME] = time }
     }
 }

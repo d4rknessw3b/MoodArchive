@@ -30,4 +30,16 @@ interface SettingsRepository {
 
     /** Установить биометрическую аутентификацию */
     suspend fun setBiometricEnabled(enabled: Boolean)
+
+    /** Включены ли ежедневные уведомления */
+    val isReminderEnabled: Flow<Boolean>
+
+    /** Установить активность уведомлений */
+    suspend fun setReminderEnabled(enabled: Boolean)
+
+    /** Время уведомления в формате "HH:MM" (например "21:00") */
+    val reminderTime: Flow<String>
+
+    /** Установить время уведомления */
+    suspend fun setReminderTime(time: String)
 }

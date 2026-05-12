@@ -20,6 +20,10 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -37,8 +41,11 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -46,13 +53,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +80,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
     var showPinDialog by remember { mutableStateOf(false) }
 
     if (showPinDialog) {
@@ -211,6 +222,112 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // ─── Уведомления ───────────────────────
+            SectionTitle("Уведомления")
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Тоггл включения
+            SettingsToggleCard(
+                icon = if (uiState.isReminderEnabled) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                title = "Ежедневные напоминания",
+                subtitle = if (uiState.isReminderEnabled) "Включены · ${uiState.reminderTime}" else "Выключены",
+                isChecked = uiState.isReminderEnabled,
+                onToggle = { viewModel.toggleReminder(context) }
+            )
+
+            // Выбор времени (TimePicker диалог)
+            var showTimePicker by remember { mutableStateOf(false) }
+            if (showTimePicker) {
+                ReminderTimePickerDialog(
+                    currentTime = uiState.reminderTime,
+                    onDismiss = { showTimePicker = false },
+                    onConfirm = { h, m ->
+                        val formatted = "%02d:%02d".format(h, m)
+                        viewModel.setReminderTime(context, formatted)
+                        showTimePicker = false
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Карточка со временем + кнопка тестового уведомления
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    // Строка с временем
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Schedule,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Время напоминания",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = uiState.reminderTime,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        OutlinedButton(onClick = { showTimePicker = true }) {
+                            Text("Изменить")
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Кнопка тестового уведомления
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Send,
+                            contentDescription = null,
+                            tint = Color(0xFFFF7043)
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Проверка уведомления",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "Отправить тестовое уведомление сейчас",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { viewModel.sendTestNotification(context) },
+                            border = androidx.compose.foundation.BorderStroke(
+                                1.dp, Color(0xFFFF7043)
+                            )
+                        ) {
+                            Text("Тест", color = Color(0xFFFF7043))
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             // ─── Аккаунт ──────────────────────────────────
             SectionTitle("Аккаунт")
             Spacer(modifier = Modifier.height(8.dp))
@@ -259,7 +376,6 @@ fun SettingsScreen(
             SectionTitle("Экспорт записей")
             Spacer(modifier = Modifier.height(12.dp))
 
-            val context = LocalContext.current
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -440,4 +556,80 @@ fun PinSetupDialog(
             }
         }
     )
+}
+
+/**
+ * Диалог выбора времени напоминания.
+ * Использует Material3 TimePicker.
+ *
+ * @param currentTime текущее время в формате "HH:MM"
+ * @param onDismiss   закрыть без изменений
+ * @param onConfirm   подтвердить выбор (час, минута)
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ReminderTimePickerDialog(
+    currentTime: String,
+    onDismiss: () -> Unit,
+    onConfirm: (hour: Int, minute: Int) -> Unit
+) {
+    // Парсим текущее время для начального состояния
+    val parts = currentTime.split(":")
+    val initHour = parts.getOrNull(0)?.toIntOrNull() ?: 21
+    val initMinute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+
+    val timePickerState = rememberTimePickerState(
+        initialHour = initHour,
+        initialMinute = initMinute,
+        is24Hour = true
+    )
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            tonalElevation = 6.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Время напоминания",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp)
+                )
+
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor = MaterialTheme.colorScheme.surfaceVariant,
+                        selectorColor = MaterialTheme.colorScheme.primary,
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    OutlinedButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text("Отмена")
+                    }
+                    Button(
+                        onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }
+                    ) {
+                        Text("Готово")
+                    }
+                }
+            }
+        }
+    }
 }

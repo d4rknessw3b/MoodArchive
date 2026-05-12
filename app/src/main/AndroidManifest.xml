@@ -13,6 +13,11 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- Для восстановления будильников после перезагрузки устройства -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Для точных будильников на Android 12+ -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <!-- Аппаратные требования (необязательно) -->
     <uses-feature android:name="android.hardware.camera" android:required="false" />
@@ -51,6 +56,21 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- BroadcastReceiver для ежедневных напоминаний -->
+        <receiver
+            android:name=".receiver.DailyReminderReceiver"
+            android:exported="false">
+            <intent-filter>
+                <!-- Срабатывает по будильнику AlarmManager -->
+                <action android:name="com.moodarchive.DAILY_REMINDER" />
+            </intent-filter>
+            <intent-filter>
+                <!-- Восстанавливает будильник после перезагрузки -->
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"
