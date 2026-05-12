@@ -13,6 +13,8 @@ import com.moodarchive.domain.repository.DiaryRepository
 import com.moodarchive.domain.repository.SettingsRepository
 import com.moodarchive.presentation.screens.auth.AuthScreen
 import com.moodarchive.presentation.screens.calendar.CalendarScreen
+import com.moodarchive.presentation.screens.camera.CameraMode
+import com.moodarchive.presentation.screens.camera.CameraScreen
 import com.moodarchive.presentation.screens.create.CreateEntryScreen
 import com.moodarchive.presentation.screens.home.HomeScreen
 import com.moodarchive.presentation.screens.pin.PinAuthScreen
@@ -92,19 +94,25 @@ fun AppNavGraph(
             )
         }
 
-        // ─── Create Entry ─────────────────────────────────────
+        // ─── Create Entry ──────────────────────────────────────────────────────
         composable(Screen.CreateEntry.route) {
-            CreateEntryScreen(onNavigateBack = { navController.popBackStack() })
+            CreateEntryScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCamera = { mode -> navController.navigate(Screen.Camera.route.replace("{mode}", mode)) },
+                navController = navController
+            )
         }
 
-        // ─── Edit Entry ───────────────────────────────────────
+        // ─── Edit Entry ───────────────────────────────────────────────────────
         composable(
             route = Screen.EditEntry.route,
             arguments = listOf(navArgument("entryId") { type = NavType.StringType })
         ) { backStackEntry ->
             CreateEntryScreen(
                 entryId = backStackEntry.arguments?.getString("entryId"),
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCamera = { mode -> navController.navigate(Screen.Camera.route.replace("{mode}", mode)) },
+                navController = navController
             )
         }
 
@@ -153,6 +161,32 @@ fun AppNavGraph(
             SearchScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToEntry = { navController.navigate(Screen.ViewEntry.createRoute(it)) }
+            )
+        }
+
+        // ─── Camera ───────────────────────────────────────────────────────
+        composable(
+            route = Screen.Camera.route,
+            arguments = listOf(navArgument("mode") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val modeArg = backStackEntry.arguments?.getString("mode") ?: "photo"
+            val cameraMode = if (modeArg == "video") CameraMode.VIDEO else CameraMode.PHOTO
+            CameraScreen(
+                mode = cameraMode,
+                onPhotoCaptured = { uri ->
+                    // Возвращаем URI через SavedStateHandle предыдущему экрану
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("captured_photo_uri", uri.toString())
+                    navController.popBackStack()
+                },
+                onVideoRecorded = { uri ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("captured_video_uri", uri.toString())
+                    navController.popBackStack()
+                },
+                onClose = { navController.popBackStack() }
             )
         }
     }

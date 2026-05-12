@@ -74,6 +74,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import java.io.File
 import com.moodarchive.presentation.components.InlineAudioPlayer
+import androidx.navigation.NavController
 
 /**
  * Экран создания / редактирования записи.
@@ -83,6 +84,8 @@ import com.moodarchive.presentation.components.InlineAudioPlayer
 fun CreateEntryScreen(
     entryId: String? = null,
     onNavigateBack: () -> Unit,
+    onNavigateToCamera: ((mode: String) -> Unit)? = null,
+    navController: NavController? = null,
     viewModel: CreateEntryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -117,6 +120,28 @@ fun CreateEntryScreen(
     LaunchedEffect(entryId) {
         if (entryId != null) {
             viewModel.loadEntry(entryId)
+        }
+    }
+
+    // Получаем URI снимка/видео от CameraScreen через SavedStateHandle
+    LaunchedEffect(Unit) {
+        navController?.currentBackStackEntry?.savedStateHandle?.let { handle ->
+            handle.getLiveData<String>("captured_photo_uri").observeForever { uriStr ->
+                if (!uriStr.isNullOrBlank()) {
+                    viewModel.addAttachmentFromUri(
+                        Uri.parse(uriStr), AttachmentType.PHOTO, "Фото"
+                    )
+                    handle.remove<String>("captured_photo_uri")
+                }
+            }
+            handle.getLiveData<String>("captured_video_uri").observeForever { uriStr ->
+                if (!uriStr.isNullOrBlank()) {
+                    viewModel.addAttachmentFromUri(
+                        Uri.parse(uriStr), AttachmentType.VIDEO, "Видео"
+                    )
+                    handle.remove<String>("captured_video_uri")
+                }
+            }
         }
     }
 
@@ -239,13 +264,28 @@ fun CreateEntryScreen(
                     icon = Icons.Default.CameraAlt,
                     label = "Фото",
                     color = MaterialTheme.colorScheme.primary,
-                    onClick = { photoPickerLauncher.launch("image/*") }
+                    onClick = {
+                        if (onNavigateToCamera != null) {
+                            // Открываем встроенную камеру CameraX
+                            onNavigateToCamera("photo")
+                        } else {
+                            // Fallback: системный picker
+                            photoPickerLauncher.launch("image/*")
+                        }
+                    }
                 )
                 AttachmentButton(
                     icon = Icons.Default.Videocam,
                     label = "Видео",
                     color = Color(0xFFE53935),
-                    onClick = { videoPickerLauncher.launch("video/*") }
+                    onClick = {
+                        if (onNavigateToCamera != null) {
+                            // Открываем встроенную камеру в режиме видео
+                            onNavigateToCamera("video")
+                        } else {
+                            videoPickerLauncher.launch("video/*")
+                        }
+                    }
                 )
                 AttachmentButton(
                     icon = Icons.Default.Mic,

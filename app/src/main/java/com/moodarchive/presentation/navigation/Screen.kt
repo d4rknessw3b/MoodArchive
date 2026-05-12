@@ -19,4 +19,8 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object Search : Screen("search")
     data object PinAuth : Screen("pin_auth")
+    data object Camera : Screen("camera/{mode}") {
+        fun photoRoute() = "camera/photo"
+        fun videoRoute() = "camera/video"
+    }
 }
